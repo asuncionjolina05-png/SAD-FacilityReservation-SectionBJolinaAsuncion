@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administrator Dashboard — Facility Reservation System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="directory-bar">
+    <div class="brand">Facilities Office <small>Administrator</small></div>
+    <nav>
+        <a href="admin-dashboard.html" class="active">Dashboard</a>
+        <a href="reservations.html">Reservations</a>
+        <a href="facilities.html">Facilities</a>
+        <a href="audit-logs.html">Audit Logs</a>
+    </nav>
+    <div class="who">
+        <span>Signed in as <strong data-user-name>—</strong></span>
+        <button class="btn-signout" data-signout>Sign out</button>
+    </div>
+</header>
+
+<main class="page">
+    <div class="page-header">
+        <div>
+            <div class="eyebrow">Administrator</div>
+            <h1>Dashboard</h1>
+        </div>
+    </div>
+
+    <div class="stat-row" id="stat-row">
+        <div class="stat-tile"><div class="value">—</div><div class="label">Total facilities</div></div>
+        <div class="stat-tile"><div class="value">—</div><div class="label">Pending reservations</div></div>
+        <div class="stat-tile"><div class="value">—</div><div class="label">Approved reservations</div></div>
+        <div class="stat-tile"><div class="value">—</div><div class="label">Audit log entries</div></div>
+    </div>
+
+    <div class="link-grid">
+        <a class="link-card" href="reservations.html">
+            <h3>Reservations <span class="arrow">→</span></h3>
+            <p>Review pending requests, approve or reject them.</p>
+        </a>
+        <a class="link-card" href="facilities.html">
+            <h3>Facilities <span class="arrow">→</span></h3>
+            <p>Add facilities, set capacity, mark under maintenance.</p>
+        </a>
+        <a class="link-card" href="audit-logs.html">
+            <h3>Audit Logs <span class="arrow">→</span></h3>
+            <p>Every approval, rejection, and status change on record.</p>
+        </a>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="auth.js"></script>
+<script src="dashboard.js"></script>
+<script>
+(async function () {
+    const profile = await requireRole(["administrator"]);
+    if (!profile) return;
+    renderUserChrome(profile);
+
+    const stats = await loadAdminStats();
+    const tiles = document.querySelectorAll("#stat-row .value");
+    tiles[0].textContent = stats.totalFacilities;
+    tiles[1].textContent = stats.pending;
+    tiles[2].textContent = stats.approved;
+    tiles[3].textContent = stats.auditCount;
+})();
+</script>
+
+</body>
+</html>

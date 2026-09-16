@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Sign In — Facility Reservation System</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<div class="login-shell">
+    <div class="login-plaque">
+
+        <div class="brand">Facilities Office</div>
+
+        <h1 style="font-size:1.3rem;">Sign in</h1>
+
+        <p class="muted" style="font-size:0.88rem;">
+            Use the account issued by your administrator.
+        </p>
+
+        <form id="login-form">
+
+            <label for="email">Email</label>
+            <input
+                type="email"
+                id="email"
+                required
+                autocomplete="username"
+            >
+
+            <label for="password">Password</label>
+            <input
+                type="password"
+                id="password"
+                required
+                autocomplete="current-password"
+            >
+
+            <div class="form-error" id="login-error"></div>
+
+            <button
+                type="submit"
+                class="btn btn-brass mt-lg"
+                style="width:100%;"
+            >
+                Sign in
+            </button>
+
+        </form>
+
+        <p class="form-note">
+            Requester accounts, staff accounts, and administrator access
+            are created by the Facilities Office. Contact your administrator
+            if you don't have one yet.
+        </p>
+
+    </div>
+</div>
+
+<!-- Supabase JavaScript library -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Supabase project connection -->
+<script src="supabase.js"></script>
+
+<!-- Authentication functions -->
+<script src="auth.js"></script>
+
+<script>
+document.getElementById("login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+
+    const errorEl = document.getElementById("login-error");
+    errorEl.textContent = "";
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password
+    });
+
+    console.log("Login response:", data);
+    console.log("Login error:", error);
+
+    if (error) {
+        errorEl.textContent = error.message;
+        return;
+    }
+
+    console.log("Login successful. Redirecting by role...");
+
+    await redirectByRole();
+});
+</script>
+
+</body>
+</html>

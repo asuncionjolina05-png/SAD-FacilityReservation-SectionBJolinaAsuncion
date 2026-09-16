@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reservations — Facility Reservation System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="directory-bar">
+    <div class="brand">Facilities Office <small data-user-role>—</small></div>
+    <nav id="nav-links"></nav>
+    <div class="who">
+        <span>Signed in as <strong data-user-name>—</strong></span>
+        <button class="btn-signout" data-signout>Sign out</button>
+    </div>
+</header>
+
+<main class="page">
+    <div class="page-header">
+        <div>
+            <div class="eyebrow" id="eyebrow-label">Reservations</div>
+            <h1 id="page-title">Reservations</h1>
+        </div>
+        <button class="btn btn-brass" id="new-reservation-btn" style="display:none;">New reservation</button>
+    </div>
+
+    <div class="panel" id="new-panel" style="display:none;">
+        <div class="panel-head"><h3 style="margin:0;">Submit a reservation</h3></div>
+        <div class="panel-body">
+            <form id="reservation-form">
+                <label for="r-facility">Facility</label>
+                <select id="r-facility" required></select>
+
+                <label for="r-purpose">Purpose</label>
+                <input type="text" id="r-purpose" required placeholder="e.g. Org meeting, review class">
+
+                <div class="field-row">
+                    <div>
+                        <label for="r-start">Start time</label>
+                        <input type="datetime-local" id="r-start" required>
+                    </div>
+                    <div>
+                        <label for="r-end">End time</label>
+                        <input type="datetime-local" id="r-end" required>
+                    </div>
+                </div>
+
+                <div class="row-actions mt-lg">
+                    <button type="submit" class="btn btn-brass">Submit request</button>
+                    <button type="button" class="btn btn-outline" id="cancel-new">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-body" style="padding:0;">
+            <table class="ledger" id="reservations-table">
+                <thead>
+                    <tr id="table-head-row">
+                        <!-- filled by JS based on role -->
+                    </tr>
+                </thead>
+                <tbody id="reservations-body">
+                    <tr><td class="empty-state">Loading reservations…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/audit.js"></script>
+<script src="js/facilities.js"></script>
+<script src="js/reservations.js"></script>
+<script>
+let currentProfile = null;
+
+const navByRole = {
+    administrator: [
+        ["admin-dashboard.html", "Dashboard"],
+        ["reservations.html", "Reservations"],
+        ["facilities.html", "Facilities"],
+        ["audit-logs.html", "Audit Logs"]
+    ],
+    facility_staff: [
+        ["staff-dashboard.html", "Dashboard"],
+        ["reservations.html", "Reservations"],
+        ["facilities.html", "Facilities"]
+    ],
+    requester: [
+        ["requester-dashboard.html", "Dashboard"],
+        ["reservations.html", "My Reservations"],
+        ["facilities.html", "Facilities"]
+    ]
+};
+
+function buildNav(role) {
+    const nav = document.getElementById("nav-links");
+    nav.innerHTML = "";
+    (navByRole[role] || []).forEach(([href, label]) => {
+        const a = document.createElement("a");
+        a.href = href;
+        a.textContent = label;
+        if (href === "reservations.html") a.classList.add("active");
+        nav.appendChild(a);
+    });
+}
+
+function fmt(dt) {
+    if (!dt) return "—";
+    return new Date(dt).toLocaleString(undefined, {
+        month: "short", day: "numeric", hour: "numeric", minute: "2-digit"
+    });
+}
+
+function renderHeadRow(role) {
+    const head = document.getElementById("table-head-row");
+    if (role === "requester") {
+        head.innerHTML = "<th>Facility</th><th>Purpose</th><th>Start</th><th>End</th><th>Status</th><th></th>";
+    } else if (role === "administrator") {
+        head.innerHTML = "<th>Requester</th><th>Facility</th><th>Purpose</th><th>Start</th><th>End</th><th>Status</th><th></th>";
+    } else {
+        head.innerHTML = "<th>Facility</th><th>Purpose</th><th>Start</th><th>End</th><th>Status</th><th></th>";
+    }
+}
+
+async function renderRequesterView() {
+    const rows = await loadOwnReservations(currentProfile.id);
+    const body = document.getElementById("reservations-body");
+    body.innerHTML = "";
+
+    if (rows.length === 0) {
+        body.innerHTML = '<tr><td colspan="6" class="empty-state">You haven\'t submitted any reservations yet.</td></tr>';
+        return;
+    }
+
+    rows.forEach(r => {
+        const tr = document.createElement("tr");
+        const canEdit = r.status === "Pending";
+        const canCancel = r.status === "Pending" || r.status === "Approved";
+
+        tr.innerHTML = `
+            <td>${r.facilities?.facility_name || "—"}</td>
+            <td>${r.purpose || "—"}</td>
+            <td>${fmt(r.start_time)}</td>
+            <td>${fmt(r.end_time)}</td>
+            <td><span class="${statusBadgeClass(r.status)}">${r.status}</span></td>
+            <td>
+                <div class="row-actions">
+                    ${canCancel ? `<button class="btn btn-danger btn-small" data-cancel="${r.id}">Cancel</button>` : ""}
+                </div>
+            </td>
+        `;
+        body.appendChild(tr);
+    });
+
+    body.querySelectorAll("[data-cancel]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            if (!confirm("Cancel this reservation?")) return;
+            const ok = await cancelReservation(currentProfile.id, btn.dataset.cancel);
+            if (ok) await renderRequesterView();
+        });
+    });
+}
+
+async function renderAdminView() {
+    const rows = await loadAllReservations();
+    const body = document.getElementById("reservations-body");
+    body.innerHTML = "";
+
+    if (rows.length === 0) {
+        body.innerHTML = '<tr><td colspan="7" class="empty-state">No reservations on record yet.</td></tr>';
+        return;
+    }
+
+    rows.forEach(r => {
+        const tr = document.createElement("tr");
+        const isPending = r.status === "Pending";
+
+        tr.innerHTML = `
+            <td>${r.requester?.email || "—"}</td>
+            <td>${r.facilities?.facility_name || "—"}</td>
+            <td>${r.purpose || "—"}</td>
+            <td>${fmt(r.start_time)}</td>
+            <td>${fmt(r.end_time)}</td>
+            <td><span class="${statusBadgeClass(r.status)}">${r.status}</span></td>
+            <td>
+                <div class="row-actions">
+                    ${isPending ? `<button class="btn btn-brass btn-small" data-approve="${r.id}">Approve</button>
+                    <button class="btn btn-danger btn-small" data-reject="${r.id}">Reject</button>` : ""}
+                </div>
+            </td>
+        `;
+        body.appendChild(tr);
+    });
+
+    body.querySelectorAll("[data-approve]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const ok = await approveReservation(currentProfile, btn.dataset.approve);
+            if (ok) await renderAdminView();
+        });
+    });
+    body.querySelectorAll("[data-reject]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const ok = await rejectReservation(currentProfile, btn.dataset.reject);
+            if (ok) await renderAdminView();
+        });
+    });
+}
+
+async function renderStaffView() {
+    const rows = await loadAllReservations();
+    const body = document.getElementById("reservations-body");
+    body.innerHTML = "";
+
+    const relevant = rows.filter(r => ["Approved", "Scheduled", "In Use", "Completed"].includes(r.status));
+
+    if (relevant.length === 0) {
+        body.innerHTML = '<tr><td colspan="6" class="empty-state">No approved reservations to manage yet.</td></tr>';
+        return;
+    }
+
+    relevant.forEach(r => {
+        const tr = document.createElement("tr");
+        const canMarkInUse = r.status === "Approved" || r.status === "Scheduled";
+        const canComplete = r.status === "In Use";
+
+        tr.innerHTML = `
+            <td>${r.facilities?.facility_name || "—"}</td>
+            <td>${r.purpose || "—"}</td>
+            <td>${fmt(r.start_time)}</td>
+            <td>${fmt(r.end_time)}</td>
+            <td><span class="${statusBadgeClass(r.status)}">${r.status}</span></td>
+            <td>
+                <div class="row-actions">
+                    ${canMarkInUse ? `<button class="btn btn-outline btn-small" data-inuse="${r.id}">Mark In Use</button>` : ""}
+                    ${canComplete ? `<button class="btn btn-brass btn-small" data-complete="${r.id}">Complete</button>` : ""}
+                </div>
+            </td>
+        `;
+        body.appendChild(tr);
+    });
+
+    body.querySelectorAll("[data-inuse]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const ok = await markInUse(currentProfile, btn.dataset.inuse);
+            if (ok) await renderStaffView();
+        });
+    });
+    body.querySelectorAll("[data-complete]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const ok = await completeReservation(currentProfile, btn.dataset.complete);
+            if (ok) await renderStaffView();
+        });
+    });
+}
+
+(async function () {
+    currentProfile = await requireRole(["administrator", "facility_staff", "requester"]);
+    if (!currentProfile) return;
+    renderUserChrome(currentProfile);
+    buildNav(currentProfile.role);
+    renderHeadRow(currentProfile.role);
+
+    if (currentProfile.role === "requester") {
+        document.getElementById("page-title").textContent = "My Reservations";
+        document.getElementById("eyebrow-label").textContent = "Requester";
+        document.getElementById("new-reservation-btn").style.display = "inline-block";
+
+        await populateFacilitySelect(document.getElementById("r-facility"));
+
+        document.getElementById("new-reservation-btn").addEventListener("click", () => {
+            document.getElementById("new-panel").style.display = "block";
+        });
+        document.getElementById("cancel-new").addEventListener("click", () => {
+            document.getElementById("new-panel").style.display = "none";
+        });
+
+        document.getElementById("reservation-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const result = await submitReservation(currentProfile, {
+                facilityId: document.getElementById("r-facility").value,
+                purpose: document.getElementById("r-purpose").value.trim(),
+                startTime: document.getElementById("r-start").value,
+                endTime: document.getElementById("r-end").value
+            });
+            if (result) {
+                document.getElementById("new-panel").style.display = "none";
+                document.getElementById("reservation-form").reset();
+                await renderRequesterView();
+            }
+        });
+
+        if (window.location.hash === "#new") {
+            document.getElementById("new-panel").style.display = "block";
+        }
+
+        await renderRequesterView();
+
+    } else if (currentProfile.role === "administrator") {
+        document.getElementById("page-title").textContent = "Reservations";
+        document.getElementById("eyebrow-label").textContent = "Administrator";
+        await renderAdminView();
+
+    } else {
+        document.getElementById("page-title").textContent = "Reservations";
+        document.getElementById("eyebrow-label").textContent = "Facility Staff";
+        await renderStaffView();
+    }
+})();
+</script>
+
+</body>
+</html>

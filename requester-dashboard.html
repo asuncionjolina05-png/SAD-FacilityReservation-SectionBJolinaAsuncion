@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Dashboard — Facility Reservation System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="directory-bar">
+    <div class="brand">Facilities Office <small>Requester</small></div>
+    <nav>
+        <a href="requester-dashboard.html" class="active">Dashboard</a>
+        <a href="reservations.html">My Reservations</a>
+        <a href="facilities.html">Facilities</a>
+    </nav>
+    <div class="who">
+        <span>Signed in as <strong data-user-name>—</strong></span>
+        <button class="btn-signout" data-signout>Sign out</button>
+    </div>
+</header>
+
+<main class="page">
+    <div class="page-header">
+        <div>
+            <div class="eyebrow">Requester</div>
+            <h1>Dashboard</h1>
+        </div>
+        <a href="reservations.html#new" class="btn btn-brass">New reservation</a>
+    </div>
+
+    <div class="stat-row" id="stat-row">
+        <div class="stat-tile"><div class="value">—</div><div class="label">Pending requests</div></div>
+        <div class="stat-tile"><div class="value">—</div><div class="label">Approved requests</div></div>
+        <div class="stat-tile"><div class="value">—</div><div class="label">Total reservations</div></div>
+        <div class="stat-tile"><div class="value">—</div><div class="label">Facilities available</div></div>
+    </div>
+
+    <div class="link-grid">
+        <a class="link-card" href="facilities.html">
+            <h3>Browse facilities <span class="arrow">→</span></h3>
+            <p>See what's available and their current condition.</p>
+        </a>
+        <a class="link-card" href="reservations.html">
+            <h3>My reservations <span class="arrow">→</span></h3>
+            <p>Track status, edit a pending request, or cancel.</p>
+        </a>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="auth.js"></script>
+<script src="dashboard.js"></script>
+<script>
+(async function () {
+    const profile = await requireRole(["requester"]);
+    if (!profile) return;
+    renderUserChrome(profile);
+
+    const stats = await loadRequesterStats(profile.id);
+    const tiles = document.querySelectorAll("#stat-row .value");
+    tiles[0].textContent = stats.pending;
+    tiles[1].textContent = stats.approved;
+    tiles[2].textContent = stats.total;
+    tiles[3].textContent = stats.activeFacilities;
+})();
+</script>
+
+</body>
+</html>

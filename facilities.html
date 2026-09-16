@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Facilities — Facility Reservation System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="directory-bar" id="nav-bar">
+    <div class="brand">Facilities Office <small data-user-role>—</small></div>
+    <nav id="nav-links"></nav>
+    <div class="who">
+        <span>Signed in as <strong data-user-name>—</strong></span>
+        <button class="btn-signout" data-signout>Sign out</button>
+    </div>
+</header>
+
+<main class="page">
+    <div class="page-header">
+        <div>
+            <div class="eyebrow">Directory</div>
+            <h1>Facilities</h1>
+        </div>
+        <button class="btn btn-brass" id="add-facility-btn" style="display:none;">Add facility</button>
+    </div>
+
+    <div class="panel" id="add-panel" style="display:none;">
+        <div class="panel-head"><h3 style="margin:0;">New facility</h3></div>
+        <div class="panel-body">
+            <form id="facility-form">
+                <div class="field-row">
+                    <div>
+                        <label for="f-name">Facility name</label>
+                        <input type="text" id="f-name" required>
+                    </div>
+                    <div>
+                        <label for="f-location">Location</label>
+                        <input type="text" id="f-location">
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div>
+                        <label for="f-capacity">Capacity</label>
+                        <input type="number" id="f-capacity" min="1">
+                    </div>
+                    <div>
+                        <label for="f-status">Status</label>
+                        <select id="f-status">
+                            <option value="Active">Active</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <label for="f-description">Description</label>
+                <textarea id="f-description"></textarea>
+                <div class="row-actions mt-lg">
+                    <button type="submit" class="btn btn-brass">Save facility</button>
+                    <button type="button" class="btn btn-outline" id="cancel-add">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-body" style="padding:0;">
+            <table class="ledger" id="facilities-table">
+                <thead>
+                    <tr>
+                        <th>Facility</th>
+                        <th>Location</th>
+                        <th>Capacity</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="facilities-body">
+                    <tr><td colspan="5" class="empty-state">Loading facilities…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/audit.js"></script>
+<script src="js/facilities.js"></script>
+<script>
+let currentProfile = null;
+let editingId = null;
+
+const navByRole = {
+    administrator: [
+        ["admin-dashboard.html", "Dashboard"],
+        ["reservations.html", "Reservations"],
+        ["facilities.html", "Facilities"],
+        ["audit-logs.html", "Audit Logs"]
+    ],
+    facility_staff: [
+        ["staff-dashboard.html", "Dashboard"],
+        ["reservations.html", "Reservations"],
+        ["facilities.html", "Facilities"]
+    ],
+    requester: [
+        ["requester-dashboard.html", "Dashboard"],
+        ["reservations.html", "My Reservations"],
+        ["facilities.html", "Facilities"]
+    ]
+};
+
+function buildNav(role) {
+    const nav = document.getElementById("nav-links");
+    nav.innerHTML = "";
+    (navByRole[role] || []).forEach(([href, label]) => {
+        const a = document.createElement("a");
+        a.href = href;
+        a.textContent = label;
+        if (href === "facilities.html") a.classList.add("active");
+        nav.appendChild(a);
+    });
+}
+
+function renderFacilitiesTable(facilities, isAdmin) {
+    const body = document.getElementById("facilities-body");
+    body.innerHTML = "";
+
+    if (facilities.length === 0) {
+        body.innerHTML = '<tr><td colspan="5" class="empty-state">No facilities on record yet.</td></tr>';
+        return;
+    }
+
+    facilities.forEach(f => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td><strong>${f.facility_name}</strong>${f.description ? `<div class="muted" style="font-size:0.8rem;">${f.description}</div>` : ""}</td>
+            <td>${f.location || "—"}</td>
+            <td>${f.capacity ?? "—"}</td>
+            <td><span class="${statusBadgeClass(f.status)}">${f.status}</span></td>
+            <td></td>
+        `;
+
+        if (isAdmin) {
+            const actionCell = tr.querySelector("td:last-child");
+            actionCell.innerHTML = `
+                <div class="row-actions">
+                    <button class="btn btn-outline btn-small" data-edit="${f.id}">Edit</button>
+                    <button class="btn btn-danger btn-small" data-delete="${f.id}">Delete</button>
+                </div>
+            `;
+        }
+
+        body.appendChild(tr);
+    });
+
+    if (isAdmin) {
+        body.querySelectorAll("[data-edit]").forEach(btn => {
+            btn.addEventListener("click", () => openEditForm(facilities, btn.dataset.edit));
+        });
+        body.querySelectorAll("[data-delete]").forEach(btn => {
+            btn.addEventListener("click", () => handleDelete(btn.dataset.delete));
+        });
+    }
+}
+
+function openAddForm() {
+    editingId = null;
+    document.getElementById("facility-form").reset();
+    document.getElementById("add-panel").style.display = "block";
+}
+
+function openEditForm(facilities, id) {
+    const f = facilities.find(x => String(x.id) === String(id));
+    if (!f) return;
+    editingId = f.id;
+    document.getElementById("f-name").value = f.facility_name;
+    document.getElementById("f-location").value = f.location || "";
+    document.getElementById("f-capacity").value = f.capacity || "";
+    document.getElementById("f-status").value = f.status;
+    document.getElementById("f-description").value = f.description || "";
+    document.getElementById("add-panel").style.display = "block";
+    document.getElementById("add-panel").scrollIntoView({ behavior: "smooth" });
+}
+
+async function handleDelete(id) {
+    if (!confirm("Delete this facility? This cannot be undone.")) return;
+    const ok = await deleteFacility(currentProfile, id);
+    if (ok) await refresh();
+}
+
+async function refresh() {
+    const isAdmin = currentProfile.role === "administrator";
+    const facilities = await loadFacilities();
+    renderFacilitiesTable(facilities, isAdmin);
+}
+
+(async function () {
+    currentProfile = await requireRole(["administrator", "facility_staff", "requester"]);
+    if (!currentProfile) return;
+    renderUserChrome(currentProfile);
+    buildNav(currentProfile.role);
+
+    if (currentProfile.role === "administrator") {
+        document.getElementById("add-facility-btn").style.display = "inline-block";
+    }
+
+    document.getElementById("add-facility-btn").addEventListener("click", openAddForm);
+    document.getElementById("cancel-add").addEventListener("click", () => {
+        document.getElementById("add-panel").style.display = "none";
+    });
+
+    document.getElementById("facility-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const payload = {
+            facility_name: document.getElementById("f-name").value.trim(),
+            location: document.getElementById("f-location").value.trim(),
+            capacity: document.getElementById("f-capacity").value ? Number(document.getElementById("f-capacity").value) : null,
+            status: document.getElementById("f-status").value,
+            description: document.getElementById("f-description").value.trim()
+        };
+
+        const result = editingId
+            ? await updateFacility(currentProfile, editingId, payload)
+            : await createFacility(currentProfile, payload);
+
+        if (result) {
+            document.getElementById("add-panel").style.display = "none";
+            await refresh();
+        }
+    });
+
+    await refresh();
+})();
+</script>
+
+</body>
+</html>

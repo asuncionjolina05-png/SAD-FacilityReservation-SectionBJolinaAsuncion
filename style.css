@@ -1,0 +1,420 @@
+/* ============================================================
+   DESIGN TOKENS
+   Concept: a campus facilities office — engraved room plaques,
+   a building directory board, a bound reservation ledger.
+   Flat surfaces, square corners, thin brass rules. No shadows,
+   no rounded SaaS cards.
+   ============================================================ */
+
+:root {
+    --ink: #1B2430;
+    --ink-soft: #3A4457;
+    --paper: #EEF0EC;
+    --paper-panel: #F7F8F5;
+    --line: #D7D2C4;
+    --brass: #C98A3E;
+    --brass-dark: #A66F2E;
+
+    --status-active: #3F6C51;
+    --status-active-bg: #E4EEE6;
+    --status-maintenance: #A66F2E;
+    --status-maintenance-bg: #F5E9D6;
+    --status-inactive: #6B6558;
+    --status-inactive-bg: #E9E6DD;
+
+    --status-pending: #A66F2E;
+    --status-pending-bg: #F5E9D6;
+    --status-approved: #3F6C51;
+    --status-approved-bg: #E4EEE6;
+    --status-rejected: #9B3B3B;
+    --status-rejected-bg: #F3E1DF;
+    --status-scheduled: #2F5C8A;
+    --status-scheduled-bg: #E1EAF2;
+    --status-inuse: #2F5C8A;
+    --status-inuse-bg: #E1EAF2;
+    --status-completed: #5C5C5C;
+    --status-completed-bg: #E8E8E6;
+    --status-cancelled: #8A8578;
+    --status-cancelled-bg: #ECEAE3;
+
+    --font-display: "Fraunces", Georgia, serif;
+    --font-body: "IBM Plex Sans", -apple-system, Segoe UI, sans-serif;
+    --font-mono: "IBM Plex Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    margin: 0 0 0.4em 0;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+}
+
+h1 { font-size: 2rem; }
+h2 { font-size: 1.4rem; }
+h3 { font-size: 1.1rem; }
+
+p { margin: 0 0 1em 0; max-width: 62ch; }
+
+a { color: var(--brass-dark); }
+
+/* ---------- Directory bar (top nav) ---------- */
+
+.directory-bar {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 0.9rem 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--brass);
+}
+
+.directory-bar .brand {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.directory-bar .brand small {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    color: #A9B0BD;
+    font-weight: 400;
+}
+
+.directory-bar nav {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.directory-bar nav a {
+    color: var(--paper);
+    text-decoration: none;
+    font-size: 0.92rem;
+    border-bottom: 2px solid transparent;
+    padding-bottom: 2px;
+}
+
+.directory-bar nav a:hover,
+.directory-bar nav a.active {
+    border-bottom-color: var(--brass);
+}
+
+.directory-bar .who {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    font-size: 0.85rem;
+    color: #C7CCD6;
+}
+
+.directory-bar .who strong {
+    color: var(--paper);
+    font-weight: 500;
+}
+
+.btn-signout {
+    background: transparent;
+    border: 1px solid #4A5468;
+    color: var(--paper);
+    padding: 0.35rem 0.8rem;
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    cursor: pointer;
+}
+.btn-signout:hover { border-color: var(--brass); color: var(--brass); }
+
+/* ---------- Page shell ---------- */
+
+.page {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 2.25rem 1.75rem 4rem;
+}
+
+.page-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 1rem;
+    margin-bottom: 1.75rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.page-header .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+}
+
+/* ---------- Stat tiles (dashboard) ---------- */
+
+.stat-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    margin-bottom: 2.25rem;
+}
+
+.stat-tile {
+    background: var(--paper-panel);
+    padding: 1.1rem 1.25rem;
+}
+
+.stat-tile .value {
+    font-family: var(--font-display);
+    font-size: 2.1rem;
+    color: var(--ink);
+    line-height: 1;
+}
+
+.stat-tile .label {
+    margin-top: 0.4rem;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+}
+
+/* ---------- Panels / sections ---------- */
+
+.panel {
+    background: var(--paper-panel);
+    border: 1px solid var(--line);
+    margin-bottom: 2rem;
+}
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.panel-body { padding: 1.25rem; }
+
+/* ---------- Quick-link cards on dashboards ---------- */
+
+.link-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+}
+
+.link-card {
+    background: var(--paper-panel);
+    padding: 1.25rem;
+    text-decoration: none;
+    color: var(--ink);
+    display: block;
+}
+
+.link-card:hover { background: #fff; }
+
+.link-card h3 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.link-card h3 .arrow { color: var(--brass); font-weight: 400; }
+
+.link-card p { margin: 0; color: var(--ink-soft); font-size: 0.88rem; }
+
+/* ---------- Ledger tables ---------- */
+
+table.ledger {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+
+table.ledger th {
+    text-align: left;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--line);
+    padding: 0.6rem 0.75rem;
+}
+
+table.ledger td {
+    padding: 0.65rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+}
+
+table.ledger tr:last-child td { border-bottom: none; }
+
+table.ledger tr:hover td { background: #fff; }
+
+.row-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* ---------- Status tags ---------- */
+
+.tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    padding: 0.18rem 0.5rem;
+    border: 1px solid currentColor;
+}
+
+.tag-active, .tag-approved { color: var(--status-approved); background: var(--status-approved-bg); }
+.tag-maintenance, .tag-pending { color: var(--status-pending); background: var(--status-pending-bg); }
+.tag-inactive { color: var(--status-inactive); background: var(--status-inactive-bg); }
+.tag-rejected { color: var(--status-rejected); background: var(--status-rejected-bg); }
+.tag-scheduled, .tag-inuse { color: var(--status-inuse); background: var(--status-inuse-bg); }
+.tag-completed { color: var(--status-completed); background: var(--status-completed-bg); }
+.tag-cancelled { color: var(--status-cancelled); background: var(--status-cancelled-bg); }
+
+/* ---------- Forms ---------- */
+
+label {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    margin-bottom: 0.3rem;
+    margin-top: 1rem;
+}
+label:first-child { margin-top: 0; }
+
+input, select, textarea {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+}
+
+input:focus, select:focus, textarea:focus, button:focus, a:focus {
+    outline: 2px solid var(--brass);
+    outline-offset: 1px;
+}
+
+textarea { resize: vertical; min-height: 80px; }
+
+.field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 560px) {
+    .field-row { grid-template-columns: 1fr; }
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+    display: inline-block;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+    cursor: pointer;
+    text-decoration: none;
+}
+.btn:hover { background: var(--ink-soft); }
+
+.btn-brass { background: var(--brass); border-color: var(--brass-dark); color: #1B1206; }
+.btn-brass:hover { background: var(--brass-dark); }
+
+.btn-outline { background: transparent; color: var(--ink); border: 1px solid var(--ink); }
+.btn-outline:hover { background: var(--ink); color: var(--paper); }
+
+.btn-danger { background: transparent; color: var(--status-rejected); border: 1px solid var(--status-rejected); }
+.btn-danger:hover { background: var(--status-rejected); color: #fff; }
+
+.btn-small { padding: 0.3rem 0.65rem; font-size: 0.78rem; }
+
+.btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+/* ---------- Login page ---------- */
+
+.login-shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ink);
+    padding: 1.5rem;
+}
+
+.login-plaque {
+    background: var(--paper-panel);
+    border: 1px solid var(--line);
+    width: 100%;
+    max-width: 380px;
+    padding: 2.25rem 2rem;
+}
+
+.login-plaque .brand {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    border-bottom: 3px solid var(--brass);
+    display: inline-block;
+    padding-bottom: 0.35rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-error {
+    color: var(--status-rejected);
+    font-size: 0.85rem;
+    margin-top: 0.75rem;
+    min-height: 1.2em;
+}
+
+.form-note {
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    margin-top: 1.25rem;
+}
+
+/* ---------- Empty state ---------- */
+
+.empty-state {
+    padding: 2rem 1.25rem;
+    text-align: left;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+}
+
+/* ---------- Utility ---------- */
+
+.muted { color: var(--ink-soft); }
+.mt-lg { margin-top: 2rem; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
