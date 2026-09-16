@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit Logs — Facility Reservation System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="directory-bar">
+    <div class="brand">Facilities Office <small>Administrator</small></div>
+    <nav>
+        <a href="admin-dashboard.html">Dashboard</a>
+        <a href="reservations.html">Reservations</a>
+        <a href="facilities.html">Facilities</a>
+        <a href="audit-logs.html" class="active">Audit Logs</a>
+    </nav>
+    <div class="who">
+        <span>Signed in as <strong data-user-name>—</strong></span>
+        <button class="btn-signout" data-signout>Sign out</button>
+    </div>
+</header>
+
+<main class="page">
+    <div class="page-header">
+        <div>
+            <div class="eyebrow">Administrator</div>
+            <h1>Audit Logs</h1>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-body" style="padding:0;">
+            <table class="ledger">
+                <thead>
+                    <tr>
+                        <th>Date / time</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Table</th>
+                        <th>Record</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody id="logs-body">
+                    <tr><td colspan="6" class="empty-state">Loading audit logs…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script>
+async function loadAuditLogs() {
+    const { data, error } = await supabase
+        .from("audit_logs")
+        .select("*, user:user_id(email)")
+        .order("created_at", { ascending: false })
+        .limit(200);
+
+    if (error) {
+        console.error(error);
+        return [];
+    }
+    return data;
+}
+
+function fmt(dt) {
+    return new Date(dt).toLocaleString(undefined, {
+        year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit"
+    });
+}
+
+(async function () {
+    const profile = await requireRole(["administrator"]);
+    if (!profile) return;
+    renderUserChrome(profile);
+
+    const logs = await loadAuditLogs();
+    const body = document.getElementById("logs-body");
+    body.innerHTML = "";
+
+    if (logs.length === 0) {
+        body.innerHTML = '<tr><td colspan="6" class="empty-state">No audit entries yet.</td></tr>';
+        return;
+    }
+
+    logs.forEach(log => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${fmt(log.created_at)}</td>
+            <td>${log.user?.email || "—"}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.8rem;">${log.action}</td>
+            <td>${log.table_name || "—"}</td>
+            <td>${log.record_id ?? "—"}</td>
+            <td>${log.description || "—"}</td>
+        `;
+        body.appendChild(tr);
+    });
+})();
+</script>
+
+</body>
+</html>
