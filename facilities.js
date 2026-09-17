@@ -5,15 +5,16 @@
 // ============================================================
 
 async function loadFacilities() {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from("facilities")
         .select("*")
         .order("facility_name", { ascending: true });
 
     if (error) {
-        console.error(error);
+        console.error("Error loading facilities:", error);
         return [];
     }
+
     return data;
 }
 
@@ -30,34 +31,45 @@ function statusBadgeClass(status) {
         "Completed": "tag tag-completed",
         "Cancelled": "tag tag-cancelled"
     };
+
     return map[status] || "tag";
 }
 
-// Populates a <select> with Active facilities only (for the reservation form).
+
+// Populates a <select> with Active facilities only
+// for the reservation form.
 async function populateFacilitySelect(selectEl) {
     const facilities = await loadFacilities();
-    selectEl.innerHTML = '<option value="">Select a facility</option>';
+
+    selectEl.innerHTML =
+        '<option value="">Select a facility</option>';
+
     facilities
         .filter(f => f.status === "Active")
         .forEach(f => {
             const opt = document.createElement("option");
+
             opt.value = f.id;
-            opt.textContent = `${f.facility_name} (capacity ${f.capacity ?? "—"})`;
+            opt.textContent =
+                `${f.facility_name} (capacity ${f.capacity ?? "—"})`;
+
             selectEl.appendChild(opt);
         });
 }
 
+
 // ---------- Administrator: add / edit / delete ----------
 
 async function createFacility(profile, payload) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from("facilities")
         .insert([payload])
         .select()
         .single();
 
     if (error) {
-        alert(error.message);
+        console.error("Error creating facility:", error);
+        alert("Failed to save facility: " + error.message);
         return null;
     }
 
@@ -72,8 +84,9 @@ async function createFacility(profile, payload) {
     return data;
 }
 
+
 async function updateFacility(profile, facilityId, payload) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from("facilities")
         .update(payload)
         .eq("id", facilityId)
@@ -81,7 +94,8 @@ async function updateFacility(profile, facilityId, payload) {
         .single();
 
     if (error) {
-        alert(error.message);
+        console.error("Error updating facility:", error);
+        alert("Failed to update facility: " + error.message);
         return null;
     }
 
@@ -96,14 +110,16 @@ async function updateFacility(profile, facilityId, payload) {
     return data;
 }
 
+
 async function deleteFacility(profile, facilityId) {
-    const { error } = await supabase
+    const { error } = await supabaseClient
         .from("facilities")
         .delete()
         .eq("id", facilityId);
 
     if (error) {
-        alert(error.message);
+        console.error("Error deleting facility:", error);
+        alert("Failed to delete facility: " + error.message);
         return false;
     }
 
