@@ -12,10 +12,11 @@ async function loadAllReservations() {
         .order("start_time", { ascending: true });
 
     if (error) {
-        console.error(error);
+        console.error("Error loading all reservations:", error);
         return [];
     }
-    return data;
+
+    return data || [];
 }
 
 async function loadOwnReservations(userId) {
@@ -26,15 +27,19 @@ async function loadOwnReservations(userId) {
         .order("start_time", { ascending: true });
 
     if (error) {
-        console.error(error);
+        console.error("Error loading own reservations:", error);
         return [];
     }
-    return data;
+
+    return data || [];
 }
 
 // ---------- Step 15-20: Requester submits a reservation ----------
 
-async function submitReservation(profile, { facilityId, purpose, startTime, endTime }) {
+async function submitReservation(
+    profile,
+    { facilityId, purpose, startTime, endTime }
+) {
     // BR-B4-02: start must precede end
     if (new Date(startTime) >= new Date(endTime)) {
         alert("End time must be later than start time.");
@@ -42,7 +47,7 @@ async function submitReservation(profile, { facilityId, purpose, startTime, endT
     }
 
     // BR-B4-01 / BR-B4-08: facility must be Active
-    const { data: facility, error: facilityError } = await supabase
+    const { data: facility, error: facilityError } = await supabaseClient
         .from("facilities")
         .select("status")
         .eq("id", facilityId)
@@ -54,7 +59,7 @@ async function submitReservation(profile, { facilityId, purpose, startTime, endT
     }
 
     // BR-B4-03: no overlap with an already-committed reservation
-    const { data: conflicts, error: conflictError } = await supabase
+    const { data: conflicts, error: conflictError } = await supabaseClient
         .from("reservations")
         .select("*")
         .eq("facility_id", facilityId)
@@ -63,29 +68,36 @@ async function submitReservation(profile, { facilityId, purpose, startTime, endT
         .gt("end_time", startTime);
 
     if (conflictError) {
+        console.error("Conflict checking failed:", conflictError);
         alert(conflictError.message);
         return null;
     }
 
     if (conflicts && conflicts.length > 0) {
-        alert("Conflict detected. This facility is already reserved during that time.");
+        alert(
+            "Conflict detected. This facility is already reserved during that time."
+        );
         return null;
     }
 
-    const { data, error } = await supabase
+    // Insert new Pending reservation
+    const { data, error } = await supabaseClient
         .from("reservations")
-        .insert([{
-            facility_id: facilityId,
-            requester_id: profile.id,
-            purpose: purpose,
-            start_time: startTime,
-            end_time: endTime,
-            status: "Pending"
-        }])
+        .insert([
+            {
+                facility_id: facilityId,
+                requester_id: profile.id,
+                purpose: purpose,
+                start_time: startTime,
+                end_time: endTime,
+                status: "Pending"
+            }
+        ])
         .select()
         .single();
 
     if (error) {
+        console.error("Reservation submission failed:", error);
         alert(error.message);
         return null;
     }
@@ -122,7 +134,11 @@ async function approveReservation(profile, reservationId) {
         .single();
 
     if (error || !data) {
-        alert(error ? error.message : "Reservation could not be approved.");
+        alert(
+            error
+                ? error.message
+                : "Reservation could not be approved."
+        );
         return false;
     }
 
@@ -145,7 +161,9 @@ async function rejectReservation(profile, reservationId) {
 
     const { error, data } = await supabaseClient
         .from("reservations")
-        .update({ status: "Rejected" })
+        .update({
+            status: "Rejected"
+        })
         .eq("id", reservationId)
         .eq("status", "Pending")
         .select();
@@ -154,6 +172,7 @@ async function rejectReservation(profile, reservationId) {
         alert(error.message);
         return false;
     }
+
     if (!data || data.length === 0) {
         alert("Only Pending reservations can be rejected.");
         return false;
@@ -180,7 +199,9 @@ async function markInUse(profile, reservationId) {
 
     const { error, data } = await supabaseClient
         .from("reservations")
-        .update({ status: "In Use" })
+        .update({
+            status: "In Use"
+        })
         .eq("id", reservationId)
         .in("status", ["Approved", "Scheduled"])
         .select();
@@ -189,8 +210,11 @@ async function markInUse(profile, reservationId) {
         alert(error.message);
         return false;
     }
+
     if (!data || data.length === 0) {
-        alert("Only Approved/Scheduled reservations can be marked In Use.");
+        alert(
+            "Only Approved/Scheduled reservations can be marked In Use."
+        );
         return false;
     }
 
@@ -214,7 +238,9 @@ async function completeReservation(profile, reservationId) {
 
     const { error, data } = await supabaseClient
         .from("reservations")
-        .update({ status: "Completed" })
+        .update({
+            status: "Completed"
+        })
         .eq("id", reservationId)
         .eq("status", "In Use")
         .select();
@@ -223,8 +249,11 @@ async function completeReservation(profile, reservationId) {
         alert(error.message);
         return false;
     }
+
     if (!data || data.length === 0) {
-        alert("Only reservations currently In Use can be completed.");
+        alert(
+            "Only reservations currently In Use can be completed."
+        );
         return false;
     }
 
@@ -243,7 +272,7 @@ async function completeReservation(profile, reservationId) {
 
 async function updateOwnReservation(userId, reservationId, updates) {
     // BR-B4-09: requesters may modify only their own Pending requests.
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from("reservations")
         .update(updates)
         .eq("id", reservationId)
@@ -255,8 +284,11 @@ async function updateOwnReservation(userId, reservationId, updates) {
         alert(error.message);
         return false;
     }
+
     if (!data || data.length === 0) {
-        alert("You can only edit your own Pending reservations.");
+        alert(
+            "You can only edit your own Pending reservations."
+        );
         return false;
     }
 
@@ -265,9 +297,11 @@ async function updateOwnReservation(userId, reservationId, updates) {
 }
 
 async function cancelReservation(userId, reservationId) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from("reservations")
-        .update({ status: "Cancelled" })
+        .update({
+            status: "Cancelled"
+        })
         .eq("id", reservationId)
         .eq("requester_id", userId)
         .in("status", ["Pending", "Approved"])
@@ -277,6 +311,7 @@ async function cancelReservation(userId, reservationId) {
         alert(error.message);
         return false;
     }
+
     if (!data || data.length === 0) {
         alert("This reservation cannot be cancelled.");
         return false;
