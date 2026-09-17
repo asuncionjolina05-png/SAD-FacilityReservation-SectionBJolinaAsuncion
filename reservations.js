@@ -6,7 +6,7 @@
 // ---------- Shared loaders ----------
 
 async function loadAllReservations() {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from("reservations")
         .select("*, facilities(facility_name), requester:requester_id(email)")
         .order("start_time", { ascending: true });
@@ -19,7 +19,7 @@ async function loadAllReservations() {
 }
 
 async function loadOwnReservations(userId) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from("reservations")
         .select("*, facilities(facility_name)")
         .eq("requester_id", userId)
@@ -109,7 +109,7 @@ async function approveReservation(profile, reservationId) {
         return false;
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from("reservations")
         .update({
             status: "Approved",
@@ -143,7 +143,7 @@ async function rejectReservation(profile, reservationId) {
         return false;
     }
 
-    const { error, data } = await supabase
+    const { error, data } = await supabaseClient
         .from("reservations")
         .update({ status: "Rejected" })
         .eq("id", reservationId)
@@ -178,7 +178,7 @@ async function markInUse(profile, reservationId) {
         return false;
     }
 
-    const { error, data } = await supabase
+    const { error, data } = await supabaseClient
         .from("reservations")
         .update({ status: "In Use" })
         .eq("id", reservationId)
@@ -212,7 +212,7 @@ async function completeReservation(profile, reservationId) {
         return false;
     }
 
-    const { error, data } = await supabase
+    const { error, data } = await supabaseClient
         .from("reservations")
         .update({ status: "Completed" })
         .eq("id", reservationId)

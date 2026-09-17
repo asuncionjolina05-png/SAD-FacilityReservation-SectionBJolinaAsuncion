@@ -4,7 +4,7 @@
 // ============================================================
 
 async function countByStatus(table, filters = {}) {
-    let query = supabase.from(table).select("*", { count: "exact", head: true });
+    let query = supabaseClient.from(table).select("*", { count: "exact", head: true });
     Object.entries(filters).forEach(([key, value]) => {
         if (Array.isArray(value)) {
             query = query.in(key, value);
@@ -36,7 +36,7 @@ async function loadStaffStats() {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-    const { count: todayCount } = await supabase
+    const { count: todayCount } = await supabaseClient
         .from("reservations")
         .select("*", { count: "exact", head: true })
         .gte("start_time", todayStart.toISOString())

@@ -16,29 +16,28 @@ Built with plain HTML/CSS/JS + [Supabase](https://supabase.com) + GitHub Pages, 
 ```
 facility-reservation-system/
 │
-├── index.html              # entry point — routes to login or the right dashboard
+├── index.html             
 ├── login.html
 ├── admin-dashboard.html
 ├── staff-dashboard.html
 ├── requester-dashboard.html
-├── facilities.html         # shared: browse (all roles) + add/edit/delete (admin only)
-├── reservations.html       # shared: submit/track (requester), approve/reject (admin),
-│                            #         In Use/Complete (staff)
-├── audit-logs.html         # administrator only
-│
+├── facilities.html         
+├── reservations.html      
+│                           
+├── audit-logs.html         
 ├── css/
 │   └── style.css
 │
 ├── js/
-│   ├── supabase.js         # <-- put your project URL + anon key here
-│   ├── auth.js              # profile lookup, login/role guards, redirects
-│   ├── audit.js             # logAudit() helper used everywhere
-│   ├── facilities.js        # facility CRUD + status badges
-│   ├── reservations.js      # submit/approve/reject/in-use/complete/edit/cancel
-│   └── dashboard.js         # stat-tile counts per role
+│   ├── supabase.js        
+│   ├── auth.js              
+│   ├── audit.js            
+│   ├── facilities.js       
+│   ├── reservations.js      
+│   └── dashboard.js         
 │
 ├── sql/
-│   └── schema.sql           # full Supabase setup script (tables, constraints, RLS)
+│   └── schema.sql          
 │
 └── README.md
 ```
@@ -56,10 +55,11 @@ facility-reservation-system/
    directly in the SQL Editor):
 
    ```sql
-   INSERT INTO profiles (id, full_name, email, role) VALUES
-   ('PASTE-ADMIN-UUID-HERE', 'System Administrator', 'admin@gmail.com', 'administrator'),
-   ('PASTE-STAFF-UUID-HERE', 'Facility Staff', 'staff@gmail.com', 'facility_staff'),
-   ('PASTE-REQUESTER-UUID-HERE', 'Student Requester', 'requester@gmail.com', 'requester');
+  INSERT INTO profiles (id, full_name, email, role)
+VALUES
+('ce44eb70-0310-422a-8b13-b797d2c207bc', 'System Administrator', 'admin@gmail.com', 'administrator'),
+('2041030e-c7ee-499f-8aac-fa66705a88c5', 'Facility Staff', 'staff@gmail.com', 'facility_staff'),
+('8f4d132d-b242-4497-9a6f-a7444f0cc859', 'Student Requester', 'requester@gmail.com', 'requester');
    ```
 5. **Project Settings → API** — copy your Project URL and anon public key into
    `js/supabase.js`:
@@ -92,7 +92,7 @@ git push
 
 Then: **GitHub repo → Settings → Pages → Source: Deploy from a branch → Branch: main → Folder: /root → Save.**
 
-Your live URL will look like `https://github.com/asuncionjolina05-png/SAD-FacilityReservation-SectionBJolina`.
+Your live URL will look like `https://asuncionjolina05-png.github.io/SAD-FacilityReservation-System-JolinaAsuncion/login.html`.
 
 ---
 
